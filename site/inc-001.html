@@ -59,6 +59,12 @@
     <tr><td>First detection</td><td>Wazuh rule 40112, level 12, found during manual review in Microsoft Sentinel</td></tr>
   </table></div>
 
+  <h2 id="at-a-glance">At a glance</h2>
+  <figure>
+    <a href="img/inc-001/attack-chain.svg"><img src="img/inc-001/attack-chain.svg" width="1200" height="1488" alt="Attack chain, 2026-11-14 UTC. Get in: 00:39 root password guessing from 121[.]167[.]150[.]214, blocked because root login over SSH is off (18 guesses refused); 00:40 admin/admin guessed, detected by Wazuh rule 40112; 02:35 two new IPs, 169[.]211[.]173[.]89 and 51[.]15[.]116[.]168, log in on the first try, now detected by rule 100210. Set up: 02:35 tools pushed in over SCP, not stopped, since egress blocking cannot stop incoming files, but auditd logged every copy; 02:37 attempts to switch off defenses, blocked because the bait account has no root rights. Stay in: 02:40 plants its own SSH key and changes the admin password, now detected by rule 100212; 02:41 a fourth IP, 118[.]36[.]203[.]94, logs in with that key, now detected by rule 100213; 02:43 schedules the miner every hour, detected by rule 100211. Cover tracks and profit: 02:43 deletes the dropper and script, but both were archived at 02:39; from 02:43 the miner calls its pool on port 443, blocked, 10,684 attempts in 13 hours. Root access, outbound connections and other hosts were never reached."></a>
+    <figcaption>Figure 1. What the attacker did, and what blocked or caught each step. "Detected now" marks a rule written the same night, after this incident exposed the gap.</figcaption>
+  </figure>
+
   <h2 id="environment">Environment</h2>
   <p>Honeypot #2 is a real Debian 12 server (<code>web01</code>) on Google Cloud, live since 2026-11-13. Every log is shipped in real time to a separate gateway,
     so the attacker cannot destroy the evidence by cleaning the victim.</p>
@@ -90,6 +96,19 @@
 
   <h2 id="timeline">Timeline (UTC, 2026-11-14)</h2>
   <p>Three different IP addresses worked in relay. Everything was automated; the core deployment took about 8 minutes.</p>
+  <figure>
+    <a href="img/inc-001/ip-relay.png"><img src="img/inc-001/ip-relay.png" width="1122" height="764" loading="lazy" alt="Sentinel results, 00:39 to 02:42 UTC, one row per source, account and Wazuh rule. 121[.]167[.]150[.]214 fails 18 root logins (rules 5760, 5758, 5763), then logs in as admin at 00:40:33 (rule 40112). Five unrelated scanners only try root. 169[.]211[.]173[.]89 at 02:35:18 and 51[.]15[.]116[.]168 at 02:35:50 log in as admin on the first try, and 118[.]36[.]203[.]94 logs in as admin at 02:41:02 (rule 5715)."></a>
+    <figcaption>Figure 2. Logins and failed logins for <code>admin</code> and <code>root</code>, 00:39–02:42 UTC, one row per source address, account and Wazuh rule. Group 3 is unrelated background scanning.</figcaption>
+  </figure>
+  <details class="query">
+    <summary>Query for Figure 2</summary>
+<pre><code>Hp2Wazuh_CL
+| where TimeGenerated between (datetime(2026-11-14 00:39) .. datetime(2026-11-14 02:42))
+| where rule_id in (5760, 5758, 5763, 40112, 5715) and dst_user in ("admin", "root")
+| extend src_ip = replace_string(src_ip, ".", "[.]")
+| summarize Count=count(), First=min(TimeGenerated) by src_ip, dst_user, rule_id, rule_description
+| order by First asc</code></pre>
+  </details>
   <div class="table-scroll"><table class="rt">
     <tr><th>Time</th><th>Source</th><th>Event</th><th>Evidence</th></tr>
     <tr><td class="t">00:39:25–00:40:29</td><td>121[.]167[.]150[.]214</td><td>Brute force against <code>root</code>; all fail because of <code>PermitRootLogin no</code></td><td>Wazuh 5760/5758/5763; journal</td></tr>
@@ -111,6 +130,31 @@
     <tr><td class="t">03:35, 04:35</td><td>cron</td><td>Hourly relaunch of <code>.dhpcd</code> (exits if already running)</td><td>auditd</td></tr>
   </table></div>
   <p>Outbound attempts ran continuously from 02:35 onward; the nftables tripwire blocked every one (rule 100201).</p>
+  <figure>
+    <a href="img/inc-001/stage1-drop-and-run.png"><img src="img/inc-001/stage1-drop-and-run.png" width="644" height="907" loading="lazy" alt="Stage 1, 02:35 to 02:37 UTC, commands run by the bait account: top -bn1; scp -t copies the dropper nihnukjzydh94kwvu7bntugv8o and the script bpzs0l93v4vc1lm9cgfxk6y9tl into /home/admin; the dropper is run, deleted, copied in again and rerun; chattr -i and rm -f on Google guest agent binaries in /usr/bin, which fail without root; grep for ps, ss, lsof and netstat."></a>
+    <figcaption>Figure 3. Stage 1, 02:35–02:37 UTC: the tools are copied in over the SSH login and started.</figcaption>
+  </figure>
+  <figure>
+    <a href="img/inc-001/stage2-lockout-and-backdoor.png"><img src="img/inc-001/stage2-lockout-and-backdoor.png" width="642" height="802" loading="lazy" alt="Stage 2, 02:40 UTC: passwd for oracle, ftpuser, test1, usuario and test2, all failing; chattr +a /etc/shadow, failing without root; mkdir -p /home/admin/.ssh, chattr -i on authorized_keys, chmod 700 /home/admin/.ssh and grep on authorized_keys while the attacker's key is added."></a>
+    <figcaption>Figure 4. Stage 2, 02:40 UTC: attempts to lock out rival botnets, and the backdoor SSH key.</figcaption>
+  </figure>
+  <figure>
+    <a href="img/inc-001/stage3-persist-and-clean.png"><img src="img/inc-001/stage3-persist-and-clean.png" width="884" height="850" loading="lazy" alt="Stage 3, 02:41 to 02:44 UTC: rule 100211 fires on changes to /var/spool/cron/crontabs/admin at 02:41:10 and 02:43:39; netstat -plnt; the old .dhpcd is deleted, a new one copied in with scp -t, started and checked with top; crontab -l, chattr -R -ai on /var/spool/cron, crontab - and crontab -l install the hourly entry; at 02:43:42 the dropper and script are deleted with rm -f."></a>
+    <figcaption>Figure 5. Stage 3, 02:41–02:44 UTC: the miner is replaced and scheduled hourly, then the dropper and script are deleted.
+      Figures 3–5 show selected rows from one query: 125 rows of commands run by the bait account (audit uid 1001), with the
+      system's own login-time commands (motd, gpg, systemd, run-parts) left out. The Wazuh agent's queue overflowed from
+      02:36:52 to 02:38:55 (rule 204), so commands in that window may be missing.</figcaption>
+  </figure>
+  <details class="query">
+    <summary>Query for Figures 3–5</summary>
+<pre><code>Hp2Wazuh_CL
+| where TimeGenerated between (datetime(2026-11-14 02:35) .. datetime(2026-11-14 02:44))
+| where (audit_auid == "1001" and isnotempty(audit_command)) or rule_id == 100211
+| where not(audit_command has_any ("update-motd", "gpg", "systemd", "run-parts", "uname"))
+| where not(audit_command startswith "readlink" or audit_command in ("file", "sh -c", "bash -c", "grep -e -e"))
+| project TimeGenerated, rule_id, audit_command, fim_path
+| order by TimeGenerated asc</code></pre>
+  </details>
 
   <h2 id="attack">Attacker behavior and MITRE ATT&amp;CK</h2>
   <p>This is a typical staged mining botnet: one node only brute-forces and validates credentials into a shared list, another logs in with that list and deploys.
@@ -140,6 +184,19 @@
     <li><code>/etc/shadow</code> carries only the normal ext4 <code>e</code> attribute; <code>chattr +a</code> never took effect.</li>
   </ul>
   <p><strong>Egress: none.</strong> After 02:35 the tripwire recorded outbound attempts only to 107[.]167[.]83[.]34 (ports 80 and 443) and 141[.]94[.]96[.]71, 141[.]94[.]96[.]144 and 141[.]94[.]96[.]195 (port 80). All were blocked: the miner cannot reach its pool and the host was not used to attack anyone.</p>
+  <figure>
+    <a href="img/inc-001/egress-blocked.png"><img src="img/inc-001/egress-blocked.png" width="682" height="982" loading="lazy" alt="Blocked outbound connections by destination, 02:35 to 15:36 UTC, 10,785 in all. Attacker traffic: 107[.]167[.]92[.]130:443 (5,411) and 107[.]167[.]83[.]34:443 (5,273), the miner calling its pool; port 80 download attempts between 02:39 and 02:44 to 141[.]94[.]96[.]195, 107[.]167[.]83[.]34, 141[.]94[.]96[.]71, 141[.]94[.]96[.]144 and 107[.]167[.]92[.]130. The server's own traffic, also blocked: 151[.]101[.]x[.]132:443 at 06:37, most likely Debian's update check, and 172[.]217[.]x[.]4:443 every 15 minutes, most likely a Google Cloud agent."></a>
+    <figcaption>Figure 6. Every outbound connection the victim tried, 02:35–15:36 UTC, by destination: all were dropped by the nftables tripwire (rule 100201).
+      After 15:36 the gateway uploads at most one record per destination per hour, so counts in Sentinel after that are not attempt counts.</figcaption>
+  </figure>
+  <details class="query">
+    <summary>Query for Figure 6</summary>
+<pre><code>Hp2Wazuh_CL
+| where rule_id == 100201 and TimeGenerated between (datetime(2026-11-14 02:35) .. datetime(2026-11-14 15:36))
+| extend dst = strcat(replace_string(extract(@"DST=(\S+)", 1, full_log), ".", "[.]"), ":", extract(@"DPT=(\d+)", 1, full_log))
+| summarize Attempts=count(), First=min(TimeGenerated), Last=max(TimeGenerated) by dst
+| order by Attempts desc</code></pre>
+  </details>
   <p><strong>Data completeness: mostly complete, one known gap.</strong> The Wazuh agent queue overflowed twice between 02:36:52 and 02:38:55 (rule 204), so execve records in that window may be incomplete. The rest of the timeline is confirmed by three independent sources: auditd, FIM and the systemd journal.</p>
   <p><strong>Resources:</strong> the miner uses about 50% CPU and 271 MB RAM; the victim has about 313 MB available and no swap. The Wazuh agent is protected from the OOM killer, so the kernel would kill the miner first.</p>
 
@@ -221,28 +278,34 @@
   <h2 id="screenshots">Screenshots</h2>
   <p>From Microsoft Sentinel (Log Analytics). All times UTC.</p>
   <figure>
-    <img src="img/inc-001/detect-level10.png" width="1600" height="1127" loading="lazy" alt="Sentinel query of Wazuh alerts at level 10 or higher, showing one rule 40112 among rule 2502 noise.">
-    <figcaption>Figure 1. Discovery: a level-12 rule 40112 at 00:40:33 among level-10 scanner noise (rule 2502).</figcaption>
+    <a href="img/inc-001/detect-level10.png"><img src="img/inc-001/detect-level10.png" width="1600" height="1127" loading="lazy" alt="Sentinel query of Wazuh alerts at level 10 or higher, showing one rule 40112 among rule 2502 noise."></a>
+    <figcaption>Figure 7. Discovery: a level-12 rule 40112 at 00:40:33 among level-10 scanner noise (rule 2502).</figcaption>
   </figure>
   <figure>
-    <img src="img/inc-001/attack-sequence.png" width="1600" height="1127" loading="lazy" alt="Sentinel results showing repeated SSH authentication failures for root from the brute-force source.">
-    <figcaption>Figure 2. The brute force before the successful login: repeated failures against root (rules 5760, 5758, 5763).</figcaption>
+    <a href="img/inc-001/sentinel-rule.png"><img src="img/inc-001/sentinel-rule.png" width="1299" height="427" loading="lazy" alt="Level 12 and higher Wazuh alerts, 00:00 to 04:00 UTC, grouped by source, host and rule: rule 100211 cron persistence changes, 3 alerts from 02:41:10 to 02:43:39; rule 204 agent event queue flooded, 2 alerts from 02:36:52 to 02:38:55; rule 40112 from 121[.]167[.]150[.]214 at 00:40:33. All level 12, severity Medium."></a>
+    <figcaption>Figure 8. What reaches the analyst: the analytics rule's grouping applied to 00:00–04:00 UTC turns thousands of events into three rows. Rule 204 is Wazuh warning about its own agent, not about the attacker.</figcaption>
+  </figure>
+  <details class="query">
+    <summary>Query for Figure 8</summary>
+<pre><code>Hp2Wazuh_CL
+| where TimeGenerated between (datetime(2026-11-14 00:00) .. datetime(2026-11-14 04:00))
+| where rule_level >= 12
+| summarize StartTime=min(TimeGenerated), EndTime=max(TimeGenerated), Count=count(),
+            Rules=strcat_array(make_set(rule_description, 5), " | "), MaxLevel=max(rule_level)
+            by src_ip, agent_name, rule_id
+| extend src_ip = replace_string(src_ip, ".", "[.]"), Severity = iff(MaxLevel >= 13, "High", "Medium")</code></pre>
+  </details>
+  <figure>
+    <a href="img/inc-001/ingestion-delay.png"><img src="img/inc-001/ingestion-delay.png" width="1600" height="1151" loading="lazy" alt="TimeGenerated versus ingestion time for the self-test events."></a>
+    <figcaption>Figure 9. Pipeline latency in the self-test: events from 04:40 reached Sentinel at 04:49:42.</figcaption>
   </figure>
   <figure>
-    <img src="img/inc-001/rule-preview.png" width="1600" height="1126" loading="lazy" alt="Preview of the analytics rule query, summarizing level 12+ alerts by source and rule.">
-    <figcaption>Figure 3. Analytics rule preview: level 12+ alerts grouped by source and rule (100211 cron, 204 queue overflow, 40112).</figcaption>
+    <a href="img/inc-001/security-alert.png"><img src="img/inc-001/security-alert.png" width="1600" height="1131" loading="lazy" alt="SecurityAlert table showing two HP2 rule 100211 alerts."></a>
+    <figcaption>Figure 10. Alerts raised by the analytics rule: the same event alerted at 04:52 and 05:07 (duplicate across adjacent windows).</figcaption>
   </figure>
   <figure>
-    <img src="img/inc-001/ingestion-delay.png" width="1600" height="1151" loading="lazy" alt="TimeGenerated versus ingestion time for the self-test events.">
-    <figcaption>Figure 4. Pipeline latency in the self-test: events from 04:40 reached Sentinel at 04:49:42.</figcaption>
-  </figure>
-  <figure>
-    <img src="img/inc-001/security-alert.png" width="1600" height="1131" loading="lazy" alt="SecurityAlert table showing two HP2 rule 100211 alerts.">
-    <figcaption>Figure 5. Alerts raised by the analytics rule: the same event alerted at 04:52 and 05:07 (duplicate across adjacent windows).</figcaption>
-  </figure>
-  <figure>
-    <img src="img/inc-001/incident-475.png" width="1600" height="773" loading="lazy" alt="Sentinel incident 475 with two alerts and the host entity web01.">
-    <figcaption>Figure 6. Incident #475: two alerts merged by entity into one incident. The tactic list is the rule's static configuration.</figcaption>
+    <a href="img/inc-001/incident-475-closed.png"><img src="img/inc-001/incident-475-closed.png" width="794" height="997" loading="lazy" alt="Sentinel incident 475, HP2 rule 100211 on web01, status Closed, reason Benign Positive: HP2 pipeline self-test. Two alerts merged into one incident by the host entity web01. Similar incident 483, the self-test of rule 100212, is also closed as Benign Positive. Portal display set to UTC."></a>
+    <figcaption>Figure 11. Incident #475, the pipeline self-test, closed as Benign Positive: two alerts merged by the host entity into one incident. The portal is set to UTC; the timeline shows the start of each alert's search window, not the event time.</figcaption>
   </figure>
 </main>
 
