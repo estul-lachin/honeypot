@@ -37,5 +37,10 @@ groups each run's alerts by source IP, agent and rule. IP and Host are its entit
 Sentinel can start a run up to 5 minutes after its window ends, with `now()` set to the window's end. With only
 the lower bound, events ingested in those minutes were alerted twice (uig-detections' README has the details).
 
+Since 2026-11-14 15:36 UTC the gateway's uploader (`hp2_sentinel.py`) sends at most one rule 100201 alert per
+destination IP:port per hour, so 100201 counts in Sentinel after that are not attempt counts; the full numbers are in
+the gateway's Wazuh alerts (`/var/ossec/logs/alerts/`, rotated daily). Alerts at level 10 or higher are always
+uploaded, even after the 20 MB daily budget is used up.
+
 Level 12 is the threshold instead of 10 because rule 2502 (level 10) fires about every 7 minutes from constant
 scanning.
