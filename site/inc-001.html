@@ -98,7 +98,7 @@
   <p>Three different IP addresses worked in relay. Everything was automated; the core deployment took about 8 minutes.</p>
   <figure>
     <a href="img/inc-001/ip-relay.png"><img src="img/inc-001/ip-relay.png" width="1122" height="764" loading="lazy" alt="Sentinel results, 00:39 to 02:42 UTC, one row per source, account and Wazuh rule. 121[.]167[.]150[.]214 fails 18 root logins (rules 5760, 5758, 5763), then logs in as admin at 00:40:33 (rule 40112). Five unrelated scanners only try root. 169[.]211[.]173[.]89 at 02:35:18 and 51[.]15[.]116[.]168 at 02:35:50 log in as admin on the first try, and 118[.]36[.]203[.]94 logs in as admin at 02:41:02 (rule 5715)."></a>
-    <figcaption>Figure 2. Logins and failed logins for <code>admin</code> and <code>root</code>, 00:39–02:42 UTC, one row per source address, account and Wazuh rule. Group 3 is unrelated background scanning.</figcaption>
+    <figcaption>Figure 2. Logins and failed logins for <code>admin</code> and <code>root</code>, 00:39–02:42 UTC, one row per source address, account and Wazuh rule. Group 3 is unrelated background scanning. Tap or click the image to enlarge.</figcaption>
   </figure>
   <details class="query">
     <summary>Query for Figure 2</summary>
@@ -142,7 +142,9 @@
     <a href="img/inc-001/stage3-persist-and-clean.png"><img src="img/inc-001/stage3-persist-and-clean.png" width="884" height="850" loading="lazy" alt="Stage 3, 02:41 to 02:44 UTC: rule 100211 fires on changes to /var/spool/cron/crontabs/admin at 02:41:10 and 02:43:39; netstat -plnt; the old .dhpcd is deleted, a new one copied in with scp -t, started and checked with top; crontab -l, chattr -R -ai on /var/spool/cron, crontab - and crontab -l install the hourly entry; at 02:43:42 the dropper and script are deleted with rm -f."></a>
     <figcaption>Figure 5. Stage 3, 02:41–02:44 UTC: the miner is replaced and scheduled hourly, then the dropper and script are deleted.
       Figures 3–5 show selected rows from one query: 125 rows of commands run by the bait account (audit uid 1001), with the
-      system's own login-time commands (motd, gpg, systemd, run-parts) left out. The Wazuh agent's queue overflowed from
+      system's own login-time commands (motd, gpg, systemd, run-parts) left out. The three <code>uname</code> entries removed
+      are all <code>uname -snrvm</code>, run by the login banner (motd) at the exact second of each login; the attacker never
+      ran <code>uname</code> itself. The Wazuh agent's queue overflowed from
       02:36:52 to 02:38:55 (rule 204), so commands in that window may be missing.</figcaption>
   </figure>
   <details class="query">
@@ -283,7 +285,7 @@
   </figure>
   <figure>
     <a href="img/inc-001/sentinel-rule.png"><img src="img/inc-001/sentinel-rule.png" width="1299" height="427" loading="lazy" alt="Level 12 and higher Wazuh alerts, 00:00 to 04:00 UTC, grouped by source, host and rule: rule 100211 cron persistence changes, 3 alerts from 02:41:10 to 02:43:39; rule 204 agent event queue flooded, 2 alerts from 02:36:52 to 02:38:55; rule 40112 from 121[.]167[.]150[.]214 at 00:40:33. All level 12, severity Medium."></a>
-    <figcaption>Figure 8. What reaches the analyst: the analytics rule's grouping applied to 00:00–04:00 UTC turns thousands of events into three rows. Rule 204 is Wazuh warning about its own agent, not about the attacker.</figcaption>
+    <figcaption>Figure 8. What reaches the analyst: the analytics rule's grouping applied to 00:00–04:00 UTC turns thousands of events into three rows. Rule 204 is Wazuh warning about its own agent, not about the attacker. Tap or click the image to enlarge.</figcaption>
   </figure>
   <details class="query">
     <summary>Query for Figure 8</summary>
