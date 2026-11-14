@@ -34,6 +34,10 @@ Mac
 └─ siem-wazuh/: local Wazuh on the pseudonymized copy (logs-demo/), for guide.uig.me
 ```
 
+Honeypot #2, a real Debian server with a bait account and a Wazuh gateway, is separate from the Cowrie setup
+above. Its Wazuh rules and how each was verified are in [`hp2/`](hp2/README.md), and its first intrusion is
+written up as [INC-001](https://honeypot.uig.me/inc-001.html).
+
 ## Setup
 
 1. `cp .env.example .env.local` and fill it in. Your SSH key must already be in

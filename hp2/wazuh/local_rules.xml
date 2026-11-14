@@ -1,0 +1,72 @@
+<!--
+  Honeypot #2: custom Wazuh rules on the gateway's manager (4.14.10),
+  deployed as /var/ossec/etc/rules/local_rules.xml. See hp2/README.md for how each one was verified.
+
+  IDs are per manager: siem-wazuh/config/local_rules.xml (the local replay of Honeypot #1's
+  Cowrie data) also uses 100200-100202 for unrelated rules. The two rule sets never share a manager.
+-->
+
+<!-- Tunnel tripwire: the victim probing the gateway threatens the gateway itself and triggers isolation. -->
+<group name="honeypot2,">
+  <rule id="100200" level="12">
+    <if_sid>4100</if_sid>
+    <match>VICTIM-</match>
+    <description>Honeypot2 tripwire: Victim probed Gateway via tunnel ($(srcip) -> $(dstip):$(dstport)/$(protocol))</description>
+    <mitre>
+      <id>T1046</id>
+    </mitre>
+    <group>honeypot2_tripwire,attack,</group>
+  </rule>
+</group>
+
+<!-- Egress tripwire: the victim's own nftables drops and logs every new outbound connection. -->
+<group name="honeypot2,">
+  <rule id="100201" level="6">
+    <if_sid>4100</if_sid>
+    <match>HP2-OUT-DROP</match>
+    <description>Honeypot2: Victim outbound connection blocked by host tripwire ($(srcip) -> $(dstip):$(dstport)/$(protocol))</description>
+    <group>honeypot2_egress,</group>
+  </rule>
+</group>
+
+<!-- Added after INC-001: bait-account logins (with or without failures first) and cron changes. -->
+<group name="honeypot2,">
+  <rule id="100210" level="13">
+    <if_sid>5715</if_sid>
+    <user>^admin$</user>
+    <match>Accepted password|Accepted keyboard-interactive</match>
+    <description>Honeypot2: bait account login SUCCESS ($(dstuser) from $(srcip))</description>
+    <mitre><id>T1078</id><id>T1110.001</id></mitre>
+    <group>honeypot2_bait_login,</group>
+  </rule>
+  <rule id="100211" level="12">
+    <if_sid>550,553,554</if_sid>
+    <field name="file">^/var/spool/cron|^/etc/cron</field>
+    <description>Honeypot2: cron persistence change on Victim ($(file))</description>
+    <mitre><id>T1053.003</id></mitre>
+    <group>honeypot2_persistence,</group>
+  </rule>
+</group>
+
+<!-- Added after INC-001: files dropped in the bait account's home (FIM whodata). -->
+<group name="honeypot2,">
+  <rule id="100212" level="12">
+    <if_sid>550,553,554</if_sid>
+    <field name="file">^/home/admin/</field>
+    <description>Honeypot2: file change in bait home ($(file))</description>
+    <mitre><id>T1105</id></mitre>
+    <group>honeypot2_payload,</group>
+  </rule>
+</group>
+
+<!-- Added after INC-001: the attacker's planted SSH key being used. -->
+<group name="honeypot2,">
+  <rule id="100213" level="13">
+    <if_sid>5715</if_sid>
+    <user>^admin$</user>
+    <match>Accepted publickey</match>
+    <description>Honeypot2: backdoor SSH key used on bait account ($(dstuser) from $(srcip))</description>
+    <mitre><id>T1098.004</id><id>T1078</id></mitre>
+    <group>honeypot2_bait_login,</group>
+  </rule>
+</group>
