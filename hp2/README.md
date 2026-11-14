@@ -30,8 +30,9 @@ success. An attacker who already has the password produces only rule 5715 at lev
 
 ## Sentinel
 
-One scheduled analytics rule on `Hp2Wazuh_CL` raises incidents from these alerts. It runs every 15 minutes on
-`rule_level >= 12`, with IP and Host entities, and level 13 and above is High. Each run reads what was
+One scheduled analytics rule on `Hp2Wazuh_CL` raises incidents from these alerts. Its query is
+[`sentinel/hp2-wazuh-high.kql`](sentinel/hp2-wazuh-high.kql). It runs every 15 minutes on `rule_level >= 12` and
+groups each run's alerts by source IP, agent and rule. IP and Host are its entities, and level 13 and above is High. Each run reads what was
 *ingested* in its window: `ingestion_time() > ago(15m) and ingestion_time() <= now()`. Both bounds are needed.
 Sentinel can start a run up to 5 minutes after its window ends, with `now()` set to the window's end. With only
 the lower bound, events ingested in those minutes were alerted twice (uig-detections' README has the details).

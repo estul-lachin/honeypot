@@ -1,0 +1,13 @@
+// Honeypot #2: scheduled analytics rule on the Wazuh alerts from the gateway.
+// Runs every 15 minutes with a 15-minute lookback. Entities: IP (src_ip) and Host (agent_name).
+// Each run reads what was ingested in its own window. The upper bound is needed because Sentinel can start
+// a run up to 5 minutes late, with now() set to the window's end; without it those events were alerted twice.
+Hp2Wazuh_CL
+| where ingestion_time() > ago(15m) and ingestion_time() <= now()
+| where rule_level >= 12
+| summarize StartTime=min(TimeGenerated), EndTime=max(TimeGenerated), Count=count(),
+            Rules=strcat_array(make_set(rule_description, 5), " | "),
+            FimPaths=strcat_array(make_set(fim_path, 5), " | "),
+            MaxLevel=max(rule_level)
+            by src_ip, agent_name, rule_id
+| extend Severity = iff(MaxLevel >= 13, "High", "Medium")
