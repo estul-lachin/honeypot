@@ -36,7 +36,7 @@ Mac
 
 Honeypot #2, a real Debian server with a bait account and a Wazuh gateway, is separate from the Cowrie setup
 above. Its Wazuh rules and how each was verified are in [`hp2/`](hp2/README.md), and its first intrusion is
-written up as [INC-001](https://uig.me/honeypot/inc-001.html).
+written up as [INC-001](https://uig.me/writing/inc-001/).
 
 ## Setup
 
