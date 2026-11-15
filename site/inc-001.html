@@ -25,7 +25,6 @@
     <a class="brand" href="https://uig.me/">Estul Lachin</a>
     <nav>
       <a href="https://lab.uig.me/">Labs</a>
-      <a href="https://lab.uig.me/timeline/">Timeline</a>
       <a href="./" aria-current="page">Honeypot</a>
       <a href="https://detections.uig.me/">Detections</a>
       <a href="https://guide.uig.me/">Guide</a>
@@ -95,7 +94,7 @@
   </table></div>
 
   <h2 id="timeline">Timeline (UTC, 2026-11-14)</h2>
-  <p>Three different IP addresses worked in relay. Everything was automated; the core deployment took about 8 minutes.</p>
+  <p>Four different IP addresses worked in relay. Everything was automated; the core deployment took about 8 minutes.</p>
   <figure>
     <a href="img/inc-001/ip-relay.png"><img src="img/inc-001/ip-relay.png" width="1122" height="764" loading="lazy" alt="Sentinel results, 00:39 to 02:42 UTC, one row per source, account and Wazuh rule. 121[.]167[.]150[.]214 fails 18 root logins (rules 5760, 5758, 5763), then logs in as admin at 00:40:33 (rule 40112). Five unrelated scanners only try root. 169[.]211[.]173[.]89 at 02:35:18 and 51[.]15[.]116[.]168 at 02:35:50 log in as admin on the first try, and 118[.]36[.]203[.]94 logs in as admin at 02:41:02 (rule 5715)."></a>
     <figcaption>Figure 2. Logins and failed logins for <code>admin</code> and <code>root</code>, 00:39–02:42 UTC, one row per source address, account and Wazuh rule. Group 3 is unrelated background scanning. Tap or click the image to enlarge.</figcaption>
@@ -124,6 +123,7 @@
     <tr><td class="t">02:39:56</td><td>script</td><td>Runs bash script <code>bpzs0l93v4vc1lm9cgfxk6y9tl</code>; tries <code>mv /usr/bin/ips /usr/bin/ps</code> to replace <code>ps</code></td><td>auditd</td></tr>
     <tr><td class="t">02:40:22–02:40:44</td><td>script</td><td>Redeploys <code>.dhpcd</code>; tries to change passwords of ubuntu, user, test, oracle, ftpuser and others (all fail)</td><td>auditd</td></tr>
     <tr><td class="t">02:40:45–02:40:54</td><td>script</td><td>Writes two RSA keys to <code>/home/admin/.ssh/authorized_keys</code></td><td>auditd</td></tr>
+    <tr><td class="t">02:41:02</td><td>118[.]36[.]203[.]94</td><td>Logs in as <code>admin</code> with one of the planted keys, seconds after they were written: the backdoor works without the password</td><td>Wazuh 5715</td></tr>
     <tr><td class="t">02:41:10</td><td>script</td><td><code>netstat -plnt</code>; another cron change</td><td>auditd; Wazuh 100211</td></tr>
     <tr><td class="t">02:43:13</td><td>script</td><td>Swaps in a second <code>.dhpcd</code> build (2.3 MB) and starts it</td><td>auditd</td></tr>
     <tr><td class="t">02:43:39</td><td>script</td><td>Final cron entry: <code>35 * * * * /home/admin/.dhpcd</code></td><td>Wazuh 100211</td></tr>
@@ -169,7 +169,7 @@
     <tr><td>Execution</td><td><a href="https://attack.mitre.org/techniques/T1059/004/">T1059.004</a> Unix Shell</td><td>Commands run one by one through <code>bash -c</code>; a bash deployment script</td></tr>
     <tr><td>Command and Control</td><td><a href="https://attack.mitre.org/techniques/T1105/">T1105</a> Ingress Tool Transfer</td><td>Dropper and miner pushed through the SSH session; outbound downloads blocked</td></tr>
     <tr><td>Persistence</td><td><a href="https://attack.mitre.org/techniques/T1053/003/">T1053.003</a> Cron</td><td><code>35 * * * * /home/admin/.dhpcd</code></td></tr>
-    <tr><td>Persistence</td><td><a href="https://attack.mitre.org/techniques/T1098/004/">T1098.004</a> SSH Authorized Keys</td><td>Two RSA keys added</td></tr>
+    <tr><td>Persistence</td><td><a href="https://attack.mitre.org/techniques/T1098/004/">T1098.004</a> SSH Authorized Keys</td><td>Two RSA keys added; a fourth IP logged in with one of them seconds later</td></tr>
     <tr><td>Persistence</td><td><a href="https://attack.mitre.org/techniques/T1098/">T1098</a> Account Manipulation</td><td><code>admin</code> password changed to lock out rival botnets</td></tr>
     <tr><td>Defense Evasion</td><td><a href="https://attack.mitre.org/techniques/T1036/">T1036</a> Masquerading</td><td><code>.dhpcd</code> imitates the DHCP client <code>dhcpcd</code>; leading dot hides it</td></tr>
     <tr><td>Defense Evasion</td><td><a href="https://attack.mitre.org/techniques/T1222/002/">T1222.002</a> Linux File Permissions Modification</td><td><code>chattr -i/-a</code> and <code>chattr +a /etc/shadow</code> (failed)</td></tr>
@@ -209,6 +209,7 @@
     <tr><td>IPv4</td><td><code>121[.]167[.]150[.]214</code></td><td>Brute force and credential validation</td></tr>
     <tr><td>IPv4</td><td><code>169[.]211[.]173[.]89</code></td><td>Login with harvested credential</td></tr>
     <tr><td>IPv4</td><td><code>51[.]15[.]116[.]168</code></td><td>Deployment and operator session</td></tr>
+    <tr><td>IPv4</td><td><code>118[.]36[.]203[.]94</code></td><td>Login with the planted SSH key (backdoor use)</td></tr>
     <tr><td>IPv4</td><td><code>107[.]167[.]83[.]34</code> (80, 443)</td><td>Outbound target, blocked</td></tr>
     <tr><td>IPv4</td><td><code>141[.]94[.]96[.]71</code>, <code>141[.]94[.]96[.]144</code>, <code>141[.]94[.]96[.]195</code> (80)</td><td>Outbound targets, blocked</td></tr>
     <tr><td>SHA256</td><td><code class="h">6a43f59bdc17c0cb34bff1d34e0650913290755f6e9773cbd1e6ef91a6e86c5f</code></td><td><code>.dhpcd</code>, second build (2,373,616 bytes)</td></tr>
