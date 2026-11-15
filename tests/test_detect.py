@@ -1,6 +1,6 @@
 """Tests for vps/detect.py. Run: python3 -m unittest discover -s tests
 
-No network: a fake opener stands in for detections.uig.me.
+No network: a fake opener stands in for uig.me/detections.
 IPs are from the RFC 5737 documentation ranges.
 """
 

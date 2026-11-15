@@ -1,9 +1,9 @@
 # uig-honeypot
 
 A [Cowrie](https://github.com/cowrie/cowrie) SSH/Telnet honeypot on a small VPS, with a public page at
-**https://honeypot.uig.me** that shows attacks live on a world map (a few minutes behind) or replays the last hour, plus
-[weekly reports](https://honeypot.uig.me/reports.html) mapped to MITRE ATT&CK and a
-[network view](https://honeypot.uig.me/network.html) of the Suricata IDS alerts. The raw logs stay private
+**https://uig.me/honeypot** that shows attacks live on a world map (a few minutes behind) or replays the last hour, plus
+[weekly reports](https://uig.me/honeypot/reports.html) mapped to MITRE ATT&CK and a
+[network view](https://uig.me/honeypot/network.html) of the Suricata IDS alerts. The raw logs stay private
 (on the VPS, and in a local Splunk for detection work). Only aggregated stats with no IPs and no live
 links get published.
 
@@ -19,8 +19,8 @@ VPS (Debian 13)
      enrich.py    → AbuseIPDB lookups of new source IPs (check only, never reports; cache stays private)
      aggregate.py → stats.json + recent.json (GeoIP: country/city/coords, never IPs)
                     ATT&CK tags from ttp_rules.json; weekly.py → reports/YYYY-Www.json per finished week
-     detect.py    → detections.json: where the detections.uig.me Sigma rules fired in the last 30 days,
-                    on Cowrie's logs and Suricata's alerts (rules from detections.uig.me/rules.json, run
+     detect.py    → detections.json: where the uig.me/detections Sigma rules fired in the last 30 days,
+                    on Cowrie's logs and Suricata's alerts (rules from uig.me/detections/rules.json, run
                     by a copy of its evaluator, sigma_eval.py)
      network.py   → network.json: Suricata alerts of the last 30 days (ports, signatures, CVEs,
                     countries, overlap with Cowrie), counts only
@@ -31,12 +31,12 @@ GitHub
 Mac
 ├─ ./hp: setup, deploy, status, fetch (local preview), pull (raw logs → logs/, private), demo
 ├─ siem/: local Splunk with the honeypot app: ATT&CK macro, IP reputation lookup, 7 detections, dashboard
-└─ siem-wazuh/: local Wazuh on the pseudonymized copy (logs-demo/), for guide.uig.me
+└─ siem-wazuh/: local Wazuh on the pseudonymized copy (logs-demo/), for uig.me/investigations
 ```
 
 Honeypot #2, a real Debian server with a bait account and a Wazuh gateway, is separate from the Cowrie setup
 above. Its Wazuh rules and how each was verified are in [`hp2/`](hp2/README.md), and its first intrusion is
-written up as [INC-001](https://honeypot.uig.me/inc-001.html).
+written up as [INC-001](https://uig.me/honeypot/inc-001.html).
 
 ## Setup
 
@@ -115,7 +115,7 @@ and truncates `eve.json` in place, so the shipper keeps a hash of the file's fir
 the rotated copy (`eve.json.1.gz`) when they change. Its settings (`HP_AZ_*`) go from `.env.local` to `/opt/uig-honeypot/.env` (mode 600).
 
 The analytics rules come from [uig-detections](https://github.com/estul-lachin/uig-detections): the same
-Sigma rules as detections.uig.me, converted to KQL, checked in Sentinel against test events and deployed
+Sigma rules as uig.me/detections, converted to KQL, checked in Sentinel against test events and deployed
 as scheduled rules whose alerts become one incident per source IP. The workspace has a 0.1 GB daily cap and the
 subscription a CAD 5 monthly budget alert; the honeypot sends a few MB a day. SOAR playbooks in
 uig-detections (`soar/`) enrich, triage and escalate the incidents.
@@ -142,7 +142,7 @@ Captures happen before Docker's NAT, so alerts carry the real source address; li
 stay on the VPS. `./hp nsm [HOURS]` prints memory, packet drops, alert volume and the top signatures,
 with no addresses.
 
-The public [network view](https://honeypot.uig.me/network.html) reads `network.json`, written hourly by
+The public [network view](https://uig.me/honeypot/network.html) reads `network.json`, written hourly by
 `vps/network.py`: alerts on incoming traffic over the last 30 days by day, port, category, signature, CVE
 and source country, plus how many of the flagged sources ever opened a Cowrie session (most never do: they
 scan database, RDP and web ports). Sources are counted, never listed. An alert is inbound when its source is
@@ -166,7 +166,7 @@ trial; after that the Free license still searches but doesn't run scheduled aler
 
 ## Pseudonymized copy: Splunk, Sentinel and Wazuh on the same rows
 
-[guide.uig.me](https://guide.uig.me) shows the same investigations in three SIEMs, and recordings of
+[uig.me/investigations](https://uig.me/investigations) shows the same investigations in three SIEMs, and recordings of
 them, without a single real address. `./hp pull` also fetches the Suricata alerts and then runs
 `./hp demo`, which writes `logs-demo/` (git-ignored) with `siem/pseudo.py`:
 

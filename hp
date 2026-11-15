@@ -118,7 +118,7 @@ cmd_pull() {
     cmd_demo
 }
 
-# Pseudonymized copy of logs/ for recordings and guide.uig.me (siem/pseudo.py). Same rule as the
+# Pseudonymized copy of logs/ for recordings and uig.me/investigations (siem/pseudo.py). Same rule as the
 # workspace functions HP_Cowrie / HP_Suricata (azure/demo-functions.sh), so all three SIEMs agree.
 cmd_demo() {
     if [ -z "${HP_PSEUDO_SALT:-}" ]; then

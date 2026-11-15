@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Make the pseudonymized demo copy of the honeypot logs, for recordings and guide.uig.me.
+"""Make the pseudonymized demo copy of the honeypot logs, for recordings and uig.me/investigations.
 
 Reads what ./hp pull copied into logs/ (cowrie.json*, suricata-alerts.json) and writes one file per UTC
 day into logs-demo/:

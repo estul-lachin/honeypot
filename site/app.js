@@ -1,4 +1,4 @@
-// honeypot.uig.me: renders stats.json and replays recent.json on a world map.
+// uig.me/honeypot: renders stats.json and replays recent.json on a world map.
 // Every string from the data is attacker-controlled: it is only ever set with
 // textContent / d3 .text(), never as HTML.
 "use strict";

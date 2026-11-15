@@ -34,7 +34,7 @@ mkdir -p "$WORK"
 cd "$WORK"
 git init -q -b main
 cp "$APP/data/stats.json" "$APP/data/recent.json" .
-# Rule hits for detections.uig.me (see detect.py); skipped if that run failed.
+# Rule hits for uig.me/detections (see detect.py); skipped if that run failed.
 [ ! -f "$APP/data/detections.json" ] || cp "$APP/data/detections.json" .
 # Suricata alert summary (see network.py); skipped if that run failed.
 [ ! -f "$APP/data/network.json" ] || cp "$APP/data/network.json" .
@@ -47,11 +47,11 @@ cat >README.md <<'EOF'
 # uig-honeypot-data
 
 Aggregated, privacy-safe output of the honeypot described in
-https://github.com/estul-lachin/uig-honeypot, read by https://honeypot.uig.me.
+https://github.com/estul-lachin/uig-honeypot, read by https://uig.me/honeypot.
 Replaced every minute by a single force-pushed commit. No IP addresses.
 recent.json (the last hour of events) is rebuilt every minute; the other files every hour.
 reports/ holds one file per finished ISO week (UTC) and an index.json.
-detections.json counts where the https://detections.uig.me rules fired in the last 30 days.
+detections.json counts where the https://uig.me/detections rules fired in the last 30 days.
 network.json summarizes the Suricata IDS alerts of the last 30 days (counts only).
 IP geolocation by DB-IP (https://db-ip.com), CC BY 4.0.
 EOF

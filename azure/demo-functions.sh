@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Create the workspace functions HP_Cowrie and HP_Suricata: Cowrie_CL and Suricata_CL with the same
 # pseudonyms as siem/pseudo.py (the demo copy that Splunk and Wazuh read), for recordings, case reports
-# and guide.uig.me. Run on the Mac with the Azure CLI logged in; idempotent.
+# and uig.me/investigations. Run on the Mac with the Azure CLI logged in; idempotent.
 #
 #   set -a; . ./.env.local; set +a; ./azure/demo-functions.sh
 #

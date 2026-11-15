@@ -3,7 +3,7 @@
 Honeypot #2 is a real Debian 12 server (`web01`) on Google Cloud with a bait account, next to a gateway that
 runs the Wazuh manager (4.14.10). The two talk only over WireGuard, and every other outbound connection from
 the victim is blocked. Wazuh alerts go to Microsoft Sentinel's `Hp2Wazuh_CL` table. Its first real intrusion is
-written up as [INC-001](https://honeypot.uig.me/inc-001.html).
+written up as [INC-001](https://uig.me/honeypot/inc-001.html).
 
 These rules are Wazuh XML, not Sigma, and they sit outside the
 [uig-detections](https://github.com/estul-lachin/uig-detections) pipeline. That pipeline reads Honeypot #1's

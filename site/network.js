@@ -1,4 +1,4 @@
-// honeypot.uig.me/network.html: renders network.json (Suricata IDS alerts, counts only) from the data
+// uig.me/honeypot/network.html: renders network.json (Suricata IDS alerts, counts only) from the data
 // repo. Signature names and other strings are only ever set with textContent.
 "use strict";
 

@@ -1,4 +1,4 @@
-// honeypot.uig.me/reports.html: renders one weekly report (reports/YYYY-Www.json
+// uig.me/honeypot/reports.html: renders one weekly report (reports/YYYY-Www.json
 // in the data repo) and the owner's optional notes (notes/YYYY-Www.md here).
 // Report strings are attacker-controlled: only ever set with textContent. The
 // notes are rendered by a small Markdown subset that builds DOM nodes, never HTML.

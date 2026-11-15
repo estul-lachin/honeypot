@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run the uig-detections Sigma rules on the raw Cowrie logs and Suricata alerts; write detections.json.
 
-The rules come from https://detections.uig.me/rules.json, the Sigma logic as plain data, built
+The rules come from https://uig.me/detections/rules.json, the Sigma logic as plain data, built
 by uig-detections. The last good copy is cached, so a failed download only means older rules.
 sigma_eval.py next to this script is a verbatim copy of uig-detections' tools/sigma_eval.py,
 the evaluator its CI tests run on, so a rule counts here exactly as it does in its tests.
@@ -13,7 +13,7 @@ correlations across both sensors (joined by src_ip) count here as they do there.
 The output never contains IP addresses: per rule, the Cowrie sessions, the number of distinct
 sources and the alerts in the last --days days, the first and last day it fired, and the most
 common matching command, cleaned with aggregate.clean() (URLs and IPv4 addresses defanged, the
-honeypot's own IP redacted). detections.uig.me reads it back when it builds.
+honeypot's own IP redacted). uig.me/detections reads it back when it builds.
 """
 
 import argparse
@@ -30,7 +30,7 @@ import aggregate
 import sentinel
 import sigma_eval
 
-RULES_URL = "https://detections.uig.me/rules.json"
+RULES_URL = "https://uig.me/detections/rules.json"
 DAYS = 30
 
 
